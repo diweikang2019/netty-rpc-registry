@@ -10,6 +10,7 @@ import com.kang.netty.rpc.protocol.constants.ReqType;
 import com.kang.netty.rpc.protocol.constants.RpcConstant;
 import com.kang.netty.rpc.protocol.constants.SerialType;
 import com.kang.netty.rpc.protocol.protocol.NettyClient;
+import com.kang.netty.rpc.registry.RegistryService;
 import io.netty.channel.DefaultEventLoop;
 import io.netty.util.concurrent.DefaultPromise;
 import lombok.extern.slf4j.Slf4j;
@@ -24,12 +25,10 @@ import java.lang.reflect.Method;
 @Slf4j
 public class RpcInvokerProxy implements InvocationHandler {
 
-    private String host;
-    private int port;
+    private RegistryService registryService;
 
-    public RpcInvokerProxy(String host, int port) {
-        this.host = host;
-        this.port = port;
+    public RpcInvokerProxy(RegistryService registryService) {
+        this.registryService = registryService;
     }
 
     @Override
@@ -49,10 +48,10 @@ public class RpcInvokerProxy implements InvocationHandler {
         reqProtocol.setHeader(header);
         reqProtocol.setBody(request);
 
-        NettyClient nettyClient = new NettyClient(host, port);
+        NettyClient nettyClient = new NettyClient();
         RpcFuture<RpcResponse> future = new RpcFuture<>(new DefaultPromise<>(new DefaultEventLoop()));
         RequestHolder.REQUEST_MAP.put(requestId, future);
-        nettyClient.sendRequest(reqProtocol);
+        nettyClient.sendRequest(reqProtocol, registryService);
         return future.getPromise().get().getData();
     }
 }

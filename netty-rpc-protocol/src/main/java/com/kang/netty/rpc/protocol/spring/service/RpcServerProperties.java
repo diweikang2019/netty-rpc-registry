@@ -14,4 +14,14 @@ public class RpcServerProperties {
     private String serviceAddress;
 
     private Integer servicePort;
+
+    /**
+     * 注册中心的地址
+     */
+    private String registryAddress;
+
+    /**
+     * 注册中心的类型
+     */
+    private byte registryType;
 }

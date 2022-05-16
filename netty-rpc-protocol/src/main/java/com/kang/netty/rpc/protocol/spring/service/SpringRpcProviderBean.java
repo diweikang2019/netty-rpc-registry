@@ -2,6 +2,8 @@ package com.kang.netty.rpc.protocol.spring.service;
 
 import com.kang.netty.rpc.protocol.annotation.RpcService;
 import com.kang.netty.rpc.protocol.protocol.NettyServer;
+import com.kang.netty.rpc.registry.RegistryService;
+import com.kang.netty.rpc.registry.ServiceInfo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
@@ -19,9 +21,15 @@ public class SpringRpcProviderBean implements InitializingBean, BeanPostProcesso
     private String serverAddress;
     private int serverPort;
 
-    public SpringRpcProviderBean(String serverAddress, int serverPort) {
+    /**
+     * 服务注册中心
+     */
+    private RegistryService registryService;
+
+    public SpringRpcProviderBean(String serverAddress, int serverPort, RegistryService registryService) {
         this.serverAddress = serverAddress;
         this.serverPort = serverPort;
+        this.registryService = registryService;
     }
 
     @Override
@@ -44,6 +52,18 @@ public class SpringRpcProviderBean implements InitializingBean, BeanPostProcesso
                 beanMethod.setBean(bean);
                 beanMethod.setMethod(method);
                 Mediator.beanMethodMap.put(key, beanMethod);
+
+                ServiceInfo serviceInfo = new ServiceInfo();
+                serviceInfo.setServiceAddress(this.serverAddress);
+                serviceInfo.setServicePort(this.serverPort);
+                serviceInfo.setServiceName(serviceName);
+                try {
+                    // 注册服务
+                    registryService.register(serviceInfo);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    log.error("register service {} failed", serviceName, e);
+                }
             }
         }
         return bean;

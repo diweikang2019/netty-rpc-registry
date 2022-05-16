@@ -3,6 +3,8 @@ package com.kang.netty.rpc.protocol.protocol;
 import com.kang.netty.rpc.protocol.bo.RpcProtocol;
 import com.kang.netty.rpc.protocol.bo.RpcRequest;
 import com.kang.netty.rpc.protocol.handler.RpcClientInitializer;
+import com.kang.netty.rpc.registry.RegistryService;
+import com.kang.netty.rpc.registry.ServiceInfo;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.EventLoopGroup;
@@ -19,29 +21,25 @@ public class NettyClient {
 
     private final Bootstrap bootstrap;
     private final EventLoopGroup eventLoopGroup;
-    private String serviceAddress;
-    private int servicePort;
 
-    public NettyClient(String serviceAddress, int servicePort) {
-        log.info("Begin Init Netty Client, {}, {}", serviceAddress, servicePort);
+    public NettyClient() {
+        log.info("Begin Init Netty Client");
         eventLoopGroup = new NioEventLoopGroup();
         bootstrap = new Bootstrap();
 
         bootstrap.group(eventLoopGroup)
                 .channel(NioSocketChannel.class)
                 .handler(new RpcClientInitializer());
-
-        this.serviceAddress = serviceAddress;
-        this.servicePort = servicePort;
     }
 
-    public void sendRequest(RpcProtocol<RpcRequest> protocol) throws InterruptedException {
-        final ChannelFuture future = bootstrap.connect(this.serviceAddress, this.servicePort).sync();
+    public void sendRequest(RpcProtocol<RpcRequest> protocol, RegistryService registryService) throws Exception {
+        ServiceInfo serviceInfo = registryService.discovery(protocol.getBody().getClassName());
+        final ChannelFuture future = bootstrap.connect(serviceInfo.getServiceAddress(), serviceInfo.getServicePort()).sync();
         future.addListener(listener -> {
             if (future.isSuccess()) {
-                log.info("Connect rpc server {} success.", this.serviceAddress);
+                log.info("Connect rpc server {} success.", serviceInfo.getServiceAddress());
             } else {
-                log.info("Connect rpc server {} failed.", this.serviceAddress);
+                log.info("Connect rpc server {} failed.", serviceInfo.getServiceAddress());
                 future.cause().printStackTrace();
                 eventLoopGroup.shutdownGracefully();
             }

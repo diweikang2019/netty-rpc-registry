@@ -1,5 +1,8 @@
 package com.kang.netty.rpc.protocol.spring.reference;
 
+import com.kang.netty.rpc.registry.RegistryFactory;
+import com.kang.netty.rpc.registry.RegistryService;
+import com.kang.netty.rpc.registry.RegistryType;
 import org.springframework.beans.factory.FactoryBean;
 
 import java.lang.reflect.Proxy;
@@ -11,13 +14,14 @@ import java.lang.reflect.Proxy;
 public class SpringRpcReferenceBean implements FactoryBean<Object> {
 
     private Object object;
-    private String serviceAddress;
-    private int servicePort;
+    private String registryAddress;
+    private byte registryType;
     private Class<?> interfaceClass;
 
     public void init() {
+        RegistryService registryService = RegistryFactory.createRegistryService(this.registryAddress, RegistryType.findByCode(this.registryType));
         this.object = Proxy.newProxyInstance(interfaceClass.getClassLoader(),
-                new Class<?>[]{interfaceClass}, new RpcInvokerProxy(serviceAddress, servicePort));
+                new Class<?>[]{interfaceClass}, new RpcInvokerProxy(registryService));
     }
 
     @Override
@@ -30,15 +34,15 @@ public class SpringRpcReferenceBean implements FactoryBean<Object> {
         return this.interfaceClass;
     }
 
-    public void setServiceAddress(String serviceAddress) {
-        this.serviceAddress = serviceAddress;
-    }
-
-    public void setServicePort(int servicePort) {
-        this.servicePort = servicePort;
-    }
-
     public void setInterfaceClass(Class<?> interfaceClass) {
         this.interfaceClass = interfaceClass;
+    }
+
+    public void setRegistryAddress(String registryAddress) {
+        this.registryAddress = registryAddress;
+    }
+
+    public void setRegistryType(byte registryType) {
+        this.registryType = registryType;
     }
 }

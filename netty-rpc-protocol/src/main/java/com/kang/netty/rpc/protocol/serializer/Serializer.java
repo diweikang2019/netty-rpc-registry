@@ -8,6 +8,10 @@ public interface Serializer {
 
     /**
      * 序列化
+     *
+     * @param obj
+     * @param <T>
+     * @return
      */
     <T> byte[] serialize(T obj);
 
